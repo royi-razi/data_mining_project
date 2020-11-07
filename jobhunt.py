@@ -35,7 +35,7 @@ def export_data_to_csv(jobs_output):
     """
     This function creates a directory and places in it a csv file with the data regarding all the jobs in the query.
     """
-    jobs_pd = pd.DataFrame(jobs_output, columns = ["Name","Location","Title","Time Applied])
+    jobs_pd = pd.DataFrame(jobs_output, columns = ["Name","Location","Title","Time Applied"])
     jobs_pd.to_csv("output_data.csv")
 
 
