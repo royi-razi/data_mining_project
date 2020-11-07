@@ -27,6 +27,7 @@ def get_jobs_page_data(page):
             cur_results.append(job.find('div',class_='company').span.text.replace("\n","").replace("\r",""))
             cur_results.append(job.find('div',class_='location').span.text.replace("\n","").replace("\r",""))
             cur_results.append(job.div.h2.a.text.replace("\r","").replace("\n","").replace("\r",""))
+            cur_results.append(job.find('div', class_= 'meta flex-col').time.text.replace("\n","").replace("\r",""))
             jobs_output.append(cur_results)
     return jobs_output
 
@@ -34,7 +35,7 @@ def export_data_to_csv(jobs_output):
     """
     This function creates a directory and places in it a csv file with the data regarding all the jobs in the query.
     """
-    jobs_pd = pd.DataFrame(jobs_output, columns = ["Name","Location","Title"])
+    jobs_pd = pd.DataFrame(jobs_output, columns = ["Name","Location","Title","Time Applied"])
     jobs_pd.to_csv("output_data.csv")
 
 
