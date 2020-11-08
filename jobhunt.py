@@ -22,7 +22,7 @@ def get_jobs_page_data(page):
     jobs = soup.find_all('section', class_="card-content") # Searching all the card contents of jobs
     jobs_output = []
     for job in jobs:
-        if job.find('div',class_='company') != None:
+        if job.find('div',class_='company') is not None:
             cur_results = []
             cur_results.append(job.find('div',class_='company').span.text.replace("\n","").replace("\r",""))
             cur_results.append(job.find('div',class_='location').span.text.replace("\n","").replace("\r",""))
@@ -31,21 +31,21 @@ def get_jobs_page_data(page):
             jobs_output.append(cur_results)
     return jobs_output
 
-def export_data_to_csv(jobs_output):
+def export_data_to_csv(jobs_output, job_name, place):
     """
     This function creates a directory and places in it a csv file with the data regarding all the jobs in the query.
     """
     jobs_pd = pd.DataFrame(jobs_output, columns = ["Name","Location","Title","Time Applied"])
-    jobs_pd.to_csv("output_data.csv")
+    jobs_pd.to_csv("output_data_"+job_name+"_"+place+".csv")
 
 
 
 def main():
-    Job_name = input("what is the job you want to look for?")
+    job_name = input("what is the job you want to look for?")
     place = input("where do you want to find this job?")
-    page = monster_get_content(Job_name, place)  # Using the function on the monster URL.
+    page = monster_get_content(job_name, place)  # Using the function on the monster URL.
     jobs_output = get_jobs_page_data(page) # creating a list of all the retrieved data
-    export_data_to_csv(jobs_output) # Exporting the data to csv file.
+    export_data_to_csv(jobs_output, job_name, place) # Exporting the data to csv file.
 
 
 if __name__ == '__main__':
