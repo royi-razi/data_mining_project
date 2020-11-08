@@ -12,3 +12,7 @@ requests @ file:///home/conda/feedstock_root/build_artifacts/requests_1592425495
 six @ file:///home/conda/feedstock_root/build_artifacts/six_1590081179328/work
 soupsieve @ file:///home/conda/feedstock_root/build_artifacts/soupsieve_1597680516047/work
 urllib3 @ file:///home/conda/feedstock_root/build_artifacts/urllib3_1603125704209/work
+
+requests==2.24.0
+pandas==1.1.1
+beautifulsoup4==4.9.3
