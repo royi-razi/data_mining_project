@@ -1,19 +1,47 @@
-beautifulsoup4 @ file:///home/conda/feedstock_root/build_artifacts/beautifulsoup4_1601745390275/work
+----------FULL LIST----------
+Size: 27
+
+PyMySQL==0.9.3
+PySocks==1.7.1
+beautifulsoup4==4.9.3
 brotlipy==0.7.0
 certifi==2020.6.20
-cffi @ file:///Users/runner/miniforge3/conda-bld/cffi_1602537233343/work
-chardet @ file:///Users/runner/miniforge3/conda-bld/chardet_1602255311078/work
-cryptography @ file:///Users/runner/miniforge3/conda-bld/cryptography_1604179238896/work
-idna @ file:///home/conda/feedstock_root/build_artifacts/idna_1593328102638/work
-pycparser @ file:///home/conda/feedstock_root/build_artifacts/pycparser_1593275161868/work
-pyOpenSSL==19.1.0
-PySocks @ file:///Users/runner/miniforge3/conda-bld/pysocks_1602326930468/work
-requests @ file:///home/conda/feedstock_root/build_artifacts/requests_1592425495151/work
-six @ file:///home/conda/feedstock_root/build_artifacts/six_1590081179328/work
-soupsieve @ file:///home/conda/feedstock_root/build_artifacts/soupsieve_1597680516047/work
-urllib3 @ file:///home/conda/feedstock_root/build_artifacts/urllib3_1603125704209/work
-
-requests==2.24.0
-pandas==1.1.1
-beautifulsoup4==4.9.3
+cffi==1.14.2
+chardet==3.0.4
+cryptography==3.1
+idna==2.10
+mkl-fft==1.1.0
+mkl-random==1.1.1
+mkl-service==2.3.0
 mysql-connector-python==8.0.18
+numpy==1.19.1
+pandas==1.1.1
+pip==20.2.2
+protobuf==3.6.0
+pyOpenSSL==19.1.0
+pycparser==2.20
+python-dateutil==2.8.1
+pytz==2020.1
+requests==2.24.0
+setuptools==49.6.0.post20200814
+six==1.15.0
+soupsieve==2.0.1
+urllib3==1.25.11
+wheel==0.35.1
+
+----------MINIMAL LIST----------
+Size: 13
+
+PyMySQL==0.9.3
+PySocks==1.7.1
+beautifulsoup4==4.9.3
+brotlipy==0.7.0
+mkl-fft==1.1.0
+mkl-random==1.1.1
+mkl-service==2.3.0
+mysql-connector-python==8.0.18
+pandas==1.1.1
+pip==20.2.2
+pyOpenSSL==19.1.0
+requests==2.24.0
+wheel==0.35.1
