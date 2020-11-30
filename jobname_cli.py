@@ -7,8 +7,8 @@ from city_state import city_to_state_dict
 import datetime
 import json
 import mysql.connector
-from opencage.geocoder import OpenCageGeocode
-
+# from opencage.geocoder import OpenCageGeocode
+import geocoder
 
 def get_parameters():
     """
@@ -148,7 +148,7 @@ def get_jobs_page_data(page):
 
 def get_lat_lon(place):
     key = "3fca2a04b0d44770bf76fdd15c56e628"
-    geocoder = OpenCageGeocode(key)
+    geocoder = geocoder.google(key)
     query = place
     results = geocoder.geocode(query)
     lat = results[0]['geometry']['lat']
