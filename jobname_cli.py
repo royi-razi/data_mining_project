@@ -146,11 +146,7 @@ def get_jobs_page_data(page):
     return jobs_output
 
 
-
-
 def get_lat_lon(place):
-    # key = "3fca2a04b0d44770bf76fdd15c56e628"
-    # geo = geocoder.google(key)
     geolocator = Nominatim(user_agent="my_user_agent")
     results = geolocator.geocode(place)
     return results.latitude, results.longitude
