@@ -7,7 +7,7 @@ from city_state import city_to_state_dict
 import datetime
 import json
 import mysql.connector
-from opencage.geocoder import OpenCageGeocode
+from geopy.geocoders import Nominatim
 
 
 def get_parameters():
@@ -146,14 +146,14 @@ def get_jobs_page_data(page):
     return jobs_output
 
 
+
+
 def get_lat_lon(place):
-    key = "3fca2a04b0d44770bf76fdd15c56e628"
-    geocoder = OpenCageGeocode(key)
-    query = place
-    results = geocoder.geocode(query)
-    lat = results[0]['geometry']['lat']
-    lng = results[0]['geometry']['lng']
-    return lat, lng
+    # key = "3fca2a04b0d44770bf76fdd15c56e628"
+    # geo = geocoder.google(key)
+    geolocator = Nominatim(user_agent="my_user_agent")
+    results = geolocator.geocode(place)
+    return results.latitude, results.longitude
 
 
 def update_mysql_tables(host_name, user_name, user_password, db_name, jobs_output, job_name, place, lat, lon, prc90, med, prc10, national):
@@ -235,7 +235,7 @@ def main():
     page = monster_get_content(job_name, place)  # Using the function on the monster URL.
     jobs_output = get_jobs_page_data(page)  # creating a list of all the retrieved data
     # loading data to tables:
-    update_mysql_tables("localhost", "eyal88", 'Barak2020!', 'mining', jobs_output, job_name, place, lat, lon, prc90, med, prc10, national)
+    update_mysql_tables("localhost", "root", 'HelloWorld!', 'mining', jobs_output, job_name, place, lat, lon, prc90, med, prc10, national)
     # export_data_to_csv(jobs_output, job_name, place)  # Exporting the data to csv file.
 
 

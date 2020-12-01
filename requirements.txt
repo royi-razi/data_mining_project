@@ -1,5 +1,8 @@
+Python 3.6.10 |Anaconda, Inc.| (default, May  7 2020, 23:06:31) 
+[GCC 4.2.1 Compatible Clang 4.0.1 (tags/RELEASE_401/final)] on darwin
+
 ----------FULL LIST----------
-Size: 27
+Size: 35
 
 PyMySQL==0.9.3
 PySocks==1.7.1
@@ -8,8 +11,14 @@ brotlipy==0.7.0
 certifi==2020.6.20
 cffi==1.14.2
 chardet==3.0.4
+click==7.1.2
 cryptography==3.1
+decorator==4.4.2
+future==0.18.2
+geographiclib==1.50
+geopy==2.0.0
 idna==2.10
+lxml==4.6.2
 mkl-fft==1.1.0
 mkl-random==1.1.1
 mkl-service==2.3.0
@@ -22,6 +31,7 @@ pyOpenSSL==19.1.0
 pycparser==2.20
 python-dateutil==2.8.1
 pytz==2020.1
+ratelim==0.1.6
 requests==2.24.0
 setuptools==49.6.0.post20200814
 six==1.15.0
@@ -30,12 +40,14 @@ urllib3==1.25.11
 wheel==0.35.1
 
 ----------MINIMAL LIST----------
-Size: 13
+Size: 15
 
 PyMySQL==0.9.3
 PySocks==1.7.1
 beautifulsoup4==4.9.3
 brotlipy==0.7.0
+geopy==2.0.0
+lxml==4.6.2
 mkl-fft==1.1.0
 mkl-random==1.1.1
 mkl-service==2.3.0
@@ -43,6 +55,4 @@ mysql-connector-python==8.0.18
 pandas==1.1.1
 pip==20.2.2
 pyOpenSSL==19.1.0
-requests==2.24.0
 wheel==0.35.1
-opencage==1.2.2
