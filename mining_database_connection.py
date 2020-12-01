@@ -32,7 +32,7 @@ def execute_query(connection, query):
 create_titles_table = """
 CREATE TABLE titles (
   title_id MEDIUMINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  job_name VARCHAR(20) UNIQUE
+  title VARCHAR(20) UNIQUE
   );
  """
 
