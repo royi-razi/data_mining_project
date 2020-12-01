@@ -20,11 +20,14 @@ In order to run jobhunt_cli.py, the file city_state.py needs to be in the same d
 
 # Input parameters:
 At this point, the function requires to run the function jobname_cli.py at the command line along with the job title and job location, using the following format:
+
 > jobname_cli.py <job_name>, <city location>, <state location>
- positional arguments:
- <job_name> can get one of the following values: "data scientist", "data analyst", "data engineer", "statistician", "big data architect", "senior data scientist"
- <city location> please provide *full name* of the city.
- <state location> abbreviation or full name of state are acceptable.
+ 
+positional arguments:
+<job_name> can get one of the following values: "data scientist", "data analyst", "data engineer", "statistician", "big data architect", "senior data scientist"
+<city location> please provide *full name* of the city.
+<state location> abbreviation or full name of state are acceptable.
+ 
 At this point, the function asks the user to enter username and password for database access, assuming the hostname is "localhost".
 
 # Installations required:
