@@ -39,7 +39,7 @@ CREATE TABLE titles (
 create_location_table = """
 CREATE TABLE location (
   location_id MEDIUMINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  location_name VARCHAR(20) NOT NULL,
+  location_name VARCHAR(50) NOT NULL,
   latitude DECIMAL(9,6),
   longitude DECIMAL(9,6)
   );
