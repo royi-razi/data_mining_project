@@ -7,8 +7,8 @@ from city_state import city_to_state_dict
 import datetime
 import json
 import mysql.connector
-# from opencage.geocoder import OpenCageGeocode
-import geocoder
+from opencage.geocoder import OpenCageGeocode
+
 
 def get_parameters():
     """
@@ -148,16 +148,15 @@ def get_jobs_page_data(page):
 
 def get_lat_lon(place):
     key = "3fca2a04b0d44770bf76fdd15c56e628"
-    geocoder = geocoder.google(key)
+    geocoder = OpenCageGeocode(key)
     query = place
     results = geocoder.geocode(query)
     lat = results[0]['geometry']['lat']
     lng = results[0]['geometry']['lng']
-    print(lat, lng)
     return lat, lng
 
 
-def update_mysql_tables1(host_name, user_name, user_password, db_name, jobs_output, job_name):
+def update_mysql_tables(host_name, user_name, user_password, db_name, jobs_output, job_name, place, lat, lon, prc90, med, prc10, national):
     """
 
     :param host_name: (of the mysql account).
@@ -168,84 +167,43 @@ def update_mysql_tables1(host_name, user_name, user_password, db_name, jobs_outp
     :param job_name: the job name as appeared in the search.
     :return: Nothing.
     """
+    connection = None
     try:
         connection = mysql.connector.connect(host=host_name,
                                              database=db_name,
                                              user=user_name,
                                              password=user_password)
         cursor = connection.cursor()
+        # adding values to titles table:
+        mysql_insert_query1 = """INSERT IGNORE INTO titles (title) 
+                                VALUES (%s)"""  # Update auto increment on location id?
+        recordtuple1 = (job_name,)
+        cursor.execute(mysql_insert_query1, recordtuple1)
+        title_id = cursor.lastrowid
+        # adding values to location table:
+        mysql_insert_query2 = """INSERT IGNORE INTO location (location_name, latitude, longitude) 
+                                VALUES (%s, %s, %s)"""  # Update auto increment on location id?
+        recordtuple2 = (place, lat, lon)
+        cursor.execute(mysql_insert_query2, recordtuple2)
+        location_id = cursor.lastrowid
+        # adding values to national_salaries table:
+        mysql_insert_query3 = """INSERT IGNORE INTO national_salaries (title_id, national_median_salary) 
+                                VALUES (%s, %s)"""  # Update auto increment on location id?
+        recordtuple3 = (title_id, national)
+        cursor.execute(mysql_insert_query3, recordtuple3)
+        # adding values to national_salaries table:
+        mysql_insert_query4 = """INSERT IGNORE INTO regional_salaries (title_id, location_id, area_median_salary, area_ninety_salary, area_tenth_salary) 
+                                VALUES (%s,%s,%s,%s,%s)"""  # Update auto increment on location id?
+        recordtuple4 = (title_id, location_id, med, prc90, prc10)
+        cursor.execute(mysql_insert_query4, recordtuple4)
         for line in jobs_output:
             # adding values to open_positions table:
-            mysql_insert_query1 = """INSERT IGNORE INTO open_positions (job_name, job_title, company_name, time_posted, loc_description) 
-                                    VALUES (%s, %s, %s, %s)"""  # Update auto increment on location id?
-            recordtuple1 = (job_name, line[2], line[0], line[3], line[1])
-            cursor.execute(mysql_insert_query1, recordtuple1)
-            # adding values to job_names table:
-            mysql_insert_query2 = """INSERT IGNORE INTO job_names (job_name) 
-                                    VALUES (%s)"""  # Update auto increment on location id?
-            recordtuple2 = (job_name,)
-            cursor.execute(mysql_insert_query2, recordtuple2)
-            # adding values to titles_locations table:
-            mysql_insert_query3 = """INSERT IGNORE INTO title_location (job_description) 
-                                    VALUES (%s, %s)"""  # Update auto increment?
-            recordtuple3 = (line[2],)
-            cursor.execute(mysql_insert_query3, recordtuple3)
+            mysql_insert_query5 = """INSERT IGNORE INTO open_positions (title_id, location_id, job_description, company_name, date_posted) 
+                                    VALUES (%s, %s, %s, %s, %s)"""  # Update auto increment on location id?
+            recordtuple3 = (title_id, location_id, line[2], line[0], line[3])
+            cursor.execute(mysql_insert_query5, recordtuple3)
         connection.commit()
         print("Record inserted successfully into table")
-
-    except mysql.connector.Error as error:
-        print("Failed to insert into MySQL table {}".format(error))
-
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
-            print("MySQL connection is closed")
-
-
-def update_mysql_tables2(host_name, user_name, user_password, db_name, prc90, med, prc10, national, place, job_name,
-                         lat, lon):
-    """
-    This function inserts the scraped values onto the specified database .
-    :param host_name: (of the mysql account).
-    :param user_name: (of the mysql account).
-    :param user_password: (of the mysql account).
-    :param db_name: the database to load onto the data.
-    :param prc90: the 90th percentile yearly salary of jobs in the field in the city of the search.
-    :param med:the median percentile yearly salary of jobs in the field in the city of the search.
-    :param prc10: the 10th percentile yearly salary of jobs in the field in the city of the search.
-    :param national: national median salary in the job field that was searched.
-    :param place: the name of the place searched (city+State)
-    :param job_name: the name of the job searched.
-    :param lat: latitude in degrees of searched city.
-    :param lon: longitude in degrees of searched city.
-    :return: Nothing.
-    """
-    try:
-        connection = mysql.connector.connect(host=host_name,
-                                             database=db_name,
-                                             user=user_name,
-                                             password=user_password)
-        cursor = connection.cursor()
-        # adding values to national_job_salaries table:
-        mysql_insert_query1 = """INSERT IGNORE INTO national_job_salaries (job_name, national_median_salary) 
-                                VALUES (%s, %s)"""  # need to update auto increment id?
-        recordTuple1 = (job_name, national)
-        cursor.execute(mysql_insert_query1, recordTuple1)
-
-        # adding values to job_salaries table:
-        mysql_insert_query1 = """INSERT IGNORE INTO job_salaries (job_name, location_id, area_median_salary, area_90_salary, area_10_salary) 
-                                VALUES (%s, %s, %s, %s, %s)"""  # need to update auto increment id?
-        recordTuple1 = (job_name, place, med, prc90, prc10)
-        cursor.execute(mysql_insert_query1, recordTuple1)
-
-        # adding values to locations table:
-        mysql_insert_query4 = """INSERT IGNORE INTO location (location_name, latitude, longitude) 
-                                VALUES (%s, %s, %s)"""  # Update auto increment on location id?
-        recordtuple4 = (place, lat, lon)
-        cursor.execute(mysql_insert_query4, recordtuple4)
-        connection.commit()
-        print("Record inserted successfully into Laptop table")
 
     except mysql.connector.Error as error:
         print("Failed to insert into MySQL table {}".format(error))
@@ -277,11 +235,10 @@ def main():
     page = monster_get_content(job_name, place)  # Using the function on the monster URL.
     jobs_output = get_jobs_page_data(page)  # creating a list of all the retrieved data
     # loading data to tables:
-    update_mysql_tables1("localhost", "root", 'HelloWorld!', 'mining', jobs_output, job_name)
-    # loading data to tables:
-    update_mysql_tables2("localhost", "root", 'HelloWorld!', 'mining', prc90, med, prc10, national, city, state, lat, lon)
+    update_mysql_tables("localhost", "eyal88", 'Barak2020!', 'mining', jobs_output, job_name, place, lat, lon, prc90, med, prc10, national)
     # export_data_to_csv(jobs_output, job_name, place)  # Exporting the data to csv file.
 
 
 if __name__ == '__main__':
     main()
+
