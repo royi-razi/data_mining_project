@@ -2,8 +2,7 @@ import sys
 import argparse
 from bs4 import BeautifulSoup
 import requests
-import pandas as pd
-from city_state import city_to_state_dict
+from city_state import city_to_state_dict, states_abb, states_long
 import datetime
 import json
 import mysql.connector
@@ -27,7 +26,7 @@ def get_parameters():
     return job_name, city, state
 
 
-def check_validity_location(city, state, places_dict):
+def check_validity_location(city, state, places_dict, states_abb, states_long):
     """
     This function makes sure the input data of the location is valid
     :param city: the city to do the query at.
@@ -35,22 +34,6 @@ def check_validity_location(city, state, places_dict):
     :param places_dict: a dictionary of all the main cities in the US.
     :return: nothing, but ends the program if the data is not valid.
     """
-    states_abb = ["AK", "AL", "AR", "AS", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "GA", "GU", "HI", "IA", "ID", "IL",
-                  "IN", "KS",
-                  "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV",
-                  "NY", "OH",
-                  "OK", "OR", "PA", "PR", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VI", "VT", "WA", "WI", "WV", "WY"]
-    states_long = ["Alaska", "Alabama", "Arkansas", "American Samoa", "Arizona", "California", "Colorado",
-                   "Connecticut",
-                   "District of Columbia", "Delaware", "Florida", "Georgia", "Guam", "Hawaii", "Iowa", "Idaho",
-                   "Illinois",
-                   "Indiana", "Kansas", "Kentucky", "Louisiana", "Massachusetts", "Maryland", "Maine", "Michigan",
-                   "Minnesota", "Missouri", "Mississippi", "Montana", "North Carolina", "North Dakota", "Nebraska",
-                   "New Hampshire", "New Jersey", "New Mexico", "Nevada", "New York", "Ohio", "Oklahoma", "Oregon",
-                   "Pennsylvania", "Puerto Rico", "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
-                   "Texas",
-                   "Utah", "Virginia", "Virgin Islands", "Vermont", "Washington", "Wisconsin", "West Virginia",
-                   "Wyoming"]
     zip_iterator = zip(states_abb, states_long)
     abb_dict = dict(zip_iterator)
     # Check if the state is a valid state name:
@@ -99,8 +82,9 @@ def monster_get_salaries(city, state, job_name):
     This function gets a job title and a location, and returns a page content of the desired url of salary tool in the
     monster website.
     """
+    states_dict = dict(zip(states_long, states_abb))
     salaries_site = 'https://www.monster.com/salary/q-{}-l-{}-{}' \
-        .format("-".join(job_name.lower().split()), "-".join(city.lower().split()), "-".join(state.lower().split()))
+        .format("-".join(job_name.lower().split()), "-".join(city.lower().split()), states_dict[state].lower())
     return salaries_site
 
 
@@ -152,16 +136,24 @@ def get_lat_lon(place):
     return results.latitude, results.longitude
 
 
-def update_mysql_tables(host_name, user_name, user_password, db_name, jobs_output, job_name, place, lat, lon, prc90, med, prc10, national):
+def update_mysql_tables(host_name, user_name, user_password, db_name, jobs_output,
+                        job_name, place, lat, lon, prc90, med, prc10, national):
     """
-
-    :param host_name: (of the mysql account).
+    This function injects the values retrived from the web scraping into the mysql tables.
+        :param host_name: (of the mysql account).
     :param user_name: (of the mysql account).
     :param user_password: (of the mysql account).
     :param db_name: the database to load onto the data.
     :param jobs_output: a nested list of the scraped data.
     :param job_name: the job name as appeared in the search.
-    :return: Nothing.
+    :param place: name of the place typed in the query.
+    :param lat: latitude of place typed in the query.
+    :param lon: longitude of place typed in the query.
+    :param prc90: the 90th percentile of salaries in the field in the city searched.
+    :param med: the median percentile of salaries in the field in the city searched.
+    :param prc10: the 10th percentile of salaries in the field in the city searched.
+    :param national: the national median salary in the field.
+    :return: Nothing
     """
     connection = None
     try:
@@ -188,13 +180,15 @@ def update_mysql_tables(host_name, user_name, user_password, db_name, jobs_outpu
         recordtuple3 = (title_id, national)
         cursor.execute(mysql_insert_query3, recordtuple3)
         # adding values to national_salaries table:
-        mysql_insert_query4 = """INSERT IGNORE INTO regional_salaries (title_id, location_id, area_median_salary, area_ninety_salary, area_tenth_salary) 
+        mysql_insert_query4 = """INSERT IGNORE INTO regional_salaries (title_id, location_id,
+                                area_median_salary, area_ninety_salary, area_tenth_salary) 
                                 VALUES (%s,%s,%s,%s,%s)"""  # Update auto increment on location id?
         recordtuple4 = (title_id, location_id, med, prc90, prc10)
         cursor.execute(mysql_insert_query4, recordtuple4)
         for line in jobs_output:
             # adding values to open_positions table:
-            mysql_insert_query5 = """INSERT IGNORE INTO open_positions (title_id, location_id, job_description, company_name, date_posted) 
+            mysql_insert_query5 = """INSERT IGNORE INTO open_positions (title_id, location_id,
+                                    job_description, company_name, date_posted) 
                                     VALUES (%s, %s, %s, %s, %s)"""  # Update auto increment on location id?
             recordtuple3 = (title_id, location_id, line[2], line[0], line[3])
             cursor.execute(mysql_insert_query5, recordtuple3)
@@ -211,17 +205,9 @@ def update_mysql_tables(host_name, user_name, user_password, db_name, jobs_outpu
             print("MySQL connection is closed")
 
 
-def export_data_to_csv(jobs_output, job_name, place):
-    """
-    This function creates a directory and places in it a csv file with the data regarding all the jobs in the query.
-    """
-    jobs_pd = pd.DataFrame(jobs_output, columns=["Name", "Location", "Title", "Time Applied"])
-    jobs_pd.to_csv("output_data_" + job_name + "_" + place + ".csv")
-
-
 def main():
     job_name, city, state = get_parameters()  # gets the parameters from the CLI.
-    check_validity_location(city, state, city_to_state_dict)  # Verifying data is suitable.
+    check_validity_location(city, state, city_to_state_dict, states_abb, states_long)  # Verifying data is suitable.
     check_validity_jobname(job_name)  # checks if the job is within the list of jobs allowed.
     place = city + ", " + state
     lat, lon = get_lat_lon(place)  # get latitude and longitude of the place being searched.
@@ -231,10 +217,11 @@ def main():
     page = monster_get_content(job_name, place)  # Using the function on the monster URL.
     jobs_output = get_jobs_page_data(page)  # creating a list of all the retrieved data
     # loading data to tables:
-    update_mysql_tables("localhost", "root", 'HelloWorld!', 'mining', jobs_output, job_name, place, lat, lon, prc90, med, prc10, national)
-    # export_data_to_csv(jobs_output, job_name, place)  # Exporting the data to csv file.
+    user = input("please insert user name")
+    password = input("please insert password")
+    update_mysql_tables("localhost", user, password, 'mining',
+                        jobs_output, job_name, place, lat, lon, prc90, med, prc10, national)
 
 
 if __name__ == '__main__':
     main()
-
