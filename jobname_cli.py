@@ -139,7 +139,7 @@ def get_lat_lon(place):
 def update_mysql_tables(host_name, user_name, user_password, db_name, jobs_output,
                         job_name, place, lat, lon, prc90, med, prc10, national):
     """
-    This function injects the values retrived from the web scraping into the mysql tables.
+    This function injects the values retrieved from the web scraping into the mysql tables.
         :param host_name: (of the mysql account).
     :param user_name: (of the mysql account).
     :param user_password: (of the mysql account).
