@@ -7,7 +7,8 @@ import datetime
 import json
 import mysql.connector
 from geopy.geocoders import Nominatim
-
+from selenium import webdriver
+import os
 
 def get_parameters():
     """
@@ -51,6 +52,7 @@ def check_validity_location(city, state, places_dict, states_abb, states_long):
     if not places_dict[city] == state:
         print("City is not located in specific state.")
         sys.exit(1)
+    return state
 
 
 def check_validity_jobname(job_name):
@@ -93,6 +95,18 @@ def get_salaries_page_data(salaries_site):
     This function takes the page of the site with the salaries of the specific job in the specific city, and returns
     the job salaries in that city (10%, median, 90%) and also the median salary for the job national.
     """
+    browser = webdriver.PhantomJS(os.path.join(os.getcwd(),"phantomjs-2.1.1-windows/bin/phantomjs.exe"))
+    browser.get(salaries_site)
+    html = browser.page_source
+    soup = BeautifulSoup(html, 'html.parser')
+    salaries = soup.find('script').string  # a section inside the html that contains the salaries data.
+    # Salaries of the city that was searched in the search engine:
+    med = int(soup.find('span', {'class': 'avgSalary'}).text.replace(",", ""))
+    prc90 =  int(soup.find('span', {'class': 'maxSalary'}).text.replace(",", "")) # need to change to max
+    prc10 = int(soup.find('span', {'class': 'minSalary'}).text.replace(",", "")) # need to change to min
+    national = int(soup.find('span', {'class': 'jsx-944507022 nationalSalary'}).text.replace(",", ""))
+    '''
+    former code:
     page = requests.get(salaries_site)
     soup = BeautifulSoup(page.text, 'html.parser')
     salaries = json.loads(soup.find('script').string)  # a section inside the html that contains the salaries data.
@@ -102,6 +116,7 @@ def get_salaries_page_data(salaries_site):
     prc10 = int(salaries["estimatedSalary"][0]["percentile10"])  # 10th percentile
     national = int([item.get_text() for item in soup.select("td.jsx-944507022")][-3].replace("$", "").replace(",", ""))
     # the national mean salary in the field.
+    '''
     return prc90, med, prc10, national
 
 
@@ -207,7 +222,7 @@ def update_mysql_tables(host_name, user_name, user_password, db_name, jobs_outpu
 
 def main():
     job_name, city, state = get_parameters()  # gets the parameters from the CLI.
-    check_validity_location(city, state, city_to_state_dict, states_abb, states_long)  # Verifying data is suitable.
+    state = check_validity_location(city, state, city_to_state_dict, states_abb, states_long)  # Verifying data is suitable.
     check_validity_jobname(job_name)  # checks if the job is within the list of jobs allowed.
     place = city + ", " + state
     lat, lon = get_lat_lon(place)  # get latitude and longitude of the place being searched.
