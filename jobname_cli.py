@@ -10,6 +10,30 @@ from selenium import webdriver
 import os
 from urllib.request import urlopen
 import json
+import logging
+
+
+formatter = logging.Formatter('%(asctime)s-%(levelname)s-FILE:%(filename)s-FUNC:%(funcName)s-LINE:'
+                              '%(lineno)d-%(message)s')
+
+
+def setup_logger(name, log_file, level='INFO'):
+    """
+    the function sets up loggers.
+    """
+    handler = logging.FileHandler(log_file)
+    handler.setFormatter(formatter)
+
+    log = logging.getLogger(name)
+    log.setLevel(level)
+    log.addHandler(handler)
+
+    return log
+
+
+logger = setup_logger('info_logger', 'stout.log')
+error_logger = setup_logger('error_logger', 'errors.log')
+error_logger.error('error message: ')
 
 
 def get_parameters():
@@ -42,6 +66,7 @@ def check_validity_location(city, state, places_dict, states_abb, states_long):
     # Check if the state is a valid state name:
     if state.upper() not in states_abb and state not in states_long:
         print("Not a valid state name.")
+        error_logger.error("Wrong State! Not a valid state name.")
         sys.exit(1)
     # Convert abbreviation state name to full stat name
     if state.upper() in states_abb:
@@ -49,11 +74,14 @@ def check_validity_location(city, state, places_dict, states_abb, states_long):
     # Check if the city name is valid.
     if city not in places_dict.keys():
         print("This city doesn't exist in the USA.")
+        error_logger.error("Wrong city! This city doesn't exist in the USA.")
         sys.exit(1)
     # check if there is a match between city and state:
     if not places_dict[city] == state:
         print("City is not located in specific state.")
+        error_logger.error("Wrong city or state! There is no matching city in this state.")
         sys.exit(1)
+    logger.info("location - {},{} is valid".format(city, state))
     return state
 
 
@@ -68,6 +96,7 @@ def check_validity_jobname(job_name):
     if job_name.lower() not in optional_jobs:
         print("job name not acceptable.")
         sys.exit(1)
+    logger.info("job name - {} is valid".format(job_name))
 
 
 def monster_get_content(job, location):
@@ -78,6 +107,7 @@ def monster_get_content(job, location):
     monster_site = 'https://www.monster.com/jobs/search'  # name of the site
     payload = {'q': job, 'where': location, 'page': '10'}  # parameters to insert the url in the request.
     page = requests.get(monster_site, params=payload)
+    logger.info("Got Monster jobs list.")
     return page
 
 
@@ -89,6 +119,7 @@ def monster_get_salaries(city, state, job_name):
     states_dict = dict(zip(states_long, states_abb))
     salaries_site = 'https://www.monster.com/salary/q-{}-l-{}-{}' \
         .format("-".join(job_name.lower().split()), "-".join(city.lower().split()), states_dict[state].lower())
+    logger.info("Got Monster salaries data.")
     return salaries_site
 
 
@@ -97,16 +128,18 @@ def get_salaries_page_data(salaries_site):
     This function takes the page of the site with the salaries of the specific job in the specific city, and returns
     the job salaries in that city (10%, median, 90%) and also the median salary for the job national.
     """
-    browser = webdriver.PhantomJS(os.path.join(os.getcwd(),"phantomjs-2.1.1-windows/bin/phantomjs.exe"))
+    browser = webdriver.PhantomJS(os.path.join(os.getcwd(), "phantomjs-2.1.1-macosx/bin/phantomjs"))
     browser.get(salaries_site)
     html = browser.page_source
     soup = BeautifulSoup(html, 'html.parser')
     salaries = soup.find('script').string  # a section inside the html that contains the salaries data.
     # Salaries of the city that was searched in the search engine:
     med = int(soup.find('span', {'class': 'avgSalary'}).text.replace(",", ""))
-    prc90 =  int(soup.find('span', {'class': 'maxSalary'}).text.replace(",", "")) # need to change to max
-    prc10 = int(soup.find('span', {'class': 'minSalary'}).text.replace(",", "")) # need to change to min
+    prc90 = int(soup.find('span', {'class': 'maxSalary'}).text.replace(",", ""))  # need to change to max
+    prc10 = int(soup.find('span', {'class': 'minSalary'}).text.replace(",", ""))  # need to change to min
     national = int(soup.find('span', {'class': 'jsx-944507022 nationalSalary'}).text.replace(",", ""))
+    logger.info("Salaries data is valid - median = {}, 10th percentile = {}, "
+                 "90th percentile = {},national = {}.".format(med, prc10, prc90, national))
     return prc90, med, prc10, national
 
 
@@ -157,9 +190,10 @@ def use_adzuna_api(job_name, location):
         cur_results = []
         cur_results.append(item['company']['display_name'])
         cur_results.append(item['location']['display_name'])
-        cur_results.append(item['title'].replace("<strong>","").replace("</strong>",""))
-        cur_results.append(item['created'].split('T')[0].replace("-","/"))
+        cur_results.append(item['title'].replace("<strong>", "").replace("</strong>", ""))
+        cur_results.append(item['created'].split('T')[0].replace("-", "/"))
         jobs_output_api.append(cur_results)
+    logger.info("retrieved Adzuna web API information successfully")
     return jobs_output_api
 
 
@@ -216,7 +250,7 @@ def update_mysql_tables(host_name, user_name, user_password, db_name, jobs_outpu
         recordtuple2 = (place, lat, lon)
         cursor.execute(mysql_insert_query2, recordtuple2)
         location_id = cursor.lastrowid
-        if location_id ==0:
+        if location_id == 0:
             cursor.execute("""SELECT location_id from location where location_name=(%s)""", (place,))
             for vals in cursor:
                 location_id = vals[0]
@@ -240,9 +274,11 @@ def update_mysql_tables(host_name, user_name, user_password, db_name, jobs_outpu
             cursor.execute(mysql_insert_query5, recordtuple3)
         connection.commit()
         print("Record inserted successfully into table")
-
+        logger.info("{} in {} results were inserted successfully into table open_positions.".format(job_name, place))
     except mysql.connector.Error as error:
         print("Failed to insert into MySQL table {}".format(error))
+        error_logger.error("Failed to insert into MySQL table {}".format(error))
+
 
     finally:
         if connection.is_connected():
@@ -253,7 +289,8 @@ def update_mysql_tables(host_name, user_name, user_password, db_name, jobs_outpu
 
 def main():
     job_name, city, state = get_parameters()  # gets the parameters from the CLI.
-    state = check_validity_location(city, state, city_to_state_dict, states_abb, states_long)  # Verifying data is suitable.
+    state = check_validity_location(city, state, city_to_state_dict, states_abb,
+                                    states_long)  # Verifying data is suitable.
     check_validity_jobname(job_name)  # checks if the job is within the list of jobs allowed.
     place = city + ", " + state
     lat, lon = get_lat_lon(place)  # get latitude and longitude of the place being searched.
@@ -262,9 +299,9 @@ def main():
         salaries_site)  # Getting salaries stats in the city and the US.
     page = monster_get_content(job_name, place)  # Using the function on the monster URL.
     jobs_output = get_jobs_page_data(page)  # creating a list of all the retrieved data
-    jobs_output_api = use_adzuna_api(job_name, city) # extracting more data from the adzuna api
+    jobs_output_api = use_adzuna_api(job_name, city)  # extracting more data from the adzuna api
     for job in jobs_output_api:
-        jobs_output.append(job) # concatenating the jobs outputs from the scraping and the api.
+        jobs_output.append(job)  # concatenating the jobs outputs from the scraping and the api.
     # loading data to tables:
     user = input("please insert user name")
     password = input("please insert password")
