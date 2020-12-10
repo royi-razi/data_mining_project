@@ -68,7 +68,7 @@ CREATE TABLE open_positions (
 create_national_salaries_table = """
 CREATE TABLE national_salaries (
   national_salary_id MEDIUMINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  title_id MEDIUMINT NOT NULL,
+  title_id MEDIUMINT UNIQUE NOT NULL,
   national_median_salary int,
   CONSTRAINT fk_national_title_id
     FOREIGN KEY (title_id)
@@ -100,11 +100,9 @@ CREATE TABLE regional_salaries (
  """
 
 
-connection = create_db_connection("localhost", "root", 'HelloWorld!', 'mining')  # Connect to the Database
+connection = create_db_connection("localhost", "eyal88", 'Barak2020!', 'mining')  # Connect to the Database
 execute_query(connection, create_titles_table)  # Execute defined query
 execute_query(connection, create_location_table)
 execute_query(connection, create_national_salaries_table)
 execute_query(connection, create_regional_job_salaries_table)
 execute_query(connection, create_open_positions_table)
-
-
