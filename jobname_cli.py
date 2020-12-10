@@ -4,11 +4,13 @@ from bs4 import BeautifulSoup
 import requests
 from city_state import city_to_state_dict, states_abb, states_long
 import datetime
-import json
 import mysql.connector
 from geopy.geocoders import Nominatim
 from selenium import webdriver
 import os
+from urllib.request import urlopen
+import json
+
 
 def get_parameters():
     """
@@ -105,18 +107,6 @@ def get_salaries_page_data(salaries_site):
     prc90 =  int(soup.find('span', {'class': 'maxSalary'}).text.replace(",", "")) # need to change to max
     prc10 = int(soup.find('span', {'class': 'minSalary'}).text.replace(",", "")) # need to change to min
     national = int(soup.find('span', {'class': 'jsx-944507022 nationalSalary'}).text.replace(",", ""))
-    '''
-    former code:
-    page = requests.get(salaries_site)
-    soup = BeautifulSoup(page.text, 'html.parser')
-    salaries = json.loads(soup.find('script').string)  # a section inside the html that contains the salaries data.
-    # Salaries of the city that was searched in the search engine:
-    prc90 = int(salaries["estimatedSalary"][0]["percentile90"])  # 90th percentile
-    med = int(salaries["estimatedSalary"][0]["median"])  # median value
-    prc10 = int(salaries["estimatedSalary"][0]["percentile10"])  # 10th percentile
-    national = int([item.get_text() for item in soup.select("td.jsx-944507022")][-3].replace("$", "").replace(",", ""))
-    # the national mean salary in the field.
-    '''
     return prc90, med, prc10, national
 
 
@@ -145,7 +135,40 @@ def get_jobs_page_data(page):
     return jobs_output
 
 
+def use_adzuna_api(job_name, location):
+    """
+    This function extracts jobs data using the api of adzuna
+    :param job_name: the job name requested
+    :param location:  location of desired job
+    :return: output a list of lists where each list contains the name of the job offer company,
+     specific location and title.
+    """
+    app_key = 'c54b61864d1a48221053a5bf3093674d'
+    app_id = '356aad97'
+    job_name_query = "%20".join(job_name.split())
+    location_query = "%20".join(location.split())
+
+    url = 'https://api.adzuna.com/v1/api/jobs/us/search/1?app_id={}&app_key={}&' \
+          'what={}&where={}&content-type=application/json'.format(app_id, app_key, job_name_query, location_query)
+    response = urlopen(url)
+    results = json.loads(response.read())
+    jobs_output_api = []
+    for item in results["results"]:
+        cur_results = []
+        cur_results.append(item['company']['display_name'])
+        cur_results.append(item['location']['display_name'])
+        cur_results.append(item['title'].replace("<strong>","").replace("</strong>",""))
+        cur_results.append(item['created'].split('T')[0].replace("-","/"))
+        jobs_output_api.append(cur_results)
+    return jobs_output_api
+
+
 def get_lat_lon(place):
+    """
+    This function gets the latitude and longitude of the city in which the job is searched.
+    :param place: the city and state
+    :return: latitude and longitude as a tuple.
+    """
     geolocator = Nominatim(user_agent="my_user_agent")
     results = geolocator.geocode(place)
     return results.latitude, results.longitude
@@ -183,12 +206,20 @@ def update_mysql_tables(host_name, user_name, user_password, db_name, jobs_outpu
         recordtuple1 = (job_name,)
         cursor.execute(mysql_insert_query1, recordtuple1)
         title_id = cursor.lastrowid
+        if title_id == 0:
+            cursor.execute("""SELECT title_id from titles where title=(%s)""", (job_name,))
+            for vals in cursor:
+                title_id = vals[0]
         # adding values to location table:
         mysql_insert_query2 = """INSERT IGNORE INTO location (location_name, latitude, longitude) 
                                 VALUES (%s, %s, %s)"""  # Update auto increment on location id?
         recordtuple2 = (place, lat, lon)
         cursor.execute(mysql_insert_query2, recordtuple2)
         location_id = cursor.lastrowid
+        if location_id ==0:
+            cursor.execute("""SELECT location_id from location where location_name=(%s)""", (place,))
+            for vals in cursor:
+                location_id = vals[0]
         # adding values to national_salaries table:
         mysql_insert_query3 = """INSERT IGNORE INTO national_salaries (title_id, national_median_salary) 
                                 VALUES (%s, %s)"""  # Update auto increment on location id?
@@ -231,6 +262,9 @@ def main():
         salaries_site)  # Getting salaries stats in the city and the US.
     page = monster_get_content(job_name, place)  # Using the function on the monster URL.
     jobs_output = get_jobs_page_data(page)  # creating a list of all the retrieved data
+    jobs_output_api = use_adzuna_api(job_name, city) # extracting more data from the adzuna api
+    for job in jobs_output_api:
+        jobs_output.append(job) # concatenating the jobs outputs from the scraping and the api.
     # loading data to tables:
     user = input("please insert user name")
     password = input("please insert password")
