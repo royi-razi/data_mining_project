@@ -12,7 +12,6 @@ from urllib.request import urlopen
 import json
 import logging
 
-
 formatter = logging.Formatter('%(asctime)s-%(levelname)s-FILE:%(filename)s-FUNC:%(funcName)s-LINE:'
                               '%(lineno)d-%(message)s')
 
@@ -139,7 +138,7 @@ def get_salaries_page_data(salaries_site):
     prc10 = int(soup.find('span', {'class': 'minSalary'}).text.replace(",", ""))  # need to change to min
     national = int(soup.find('span', {'class': 'jsx-944507022 nationalSalary'}).text.replace(",", ""))
     logger.info("Salaries data is valid - median = {}, 10th percentile = {}, "
-                 "90th percentile = {},national = {}.".format(med, prc10, prc90, national))
+                "90th percentile = {},national = {}.".format(med, prc10, prc90, national))
     return prc90, med, prc10, national
 
 

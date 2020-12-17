@@ -18,7 +18,7 @@ def create_server_connection(host_name, user_name, user_password):
     return connection
 
 
-connection = create_server_connection("localhost", "root", 'HelloWorld!')
+connection = create_server_connection("localhost", "root", '1234')
 
 
 def create_database(connection, query):
