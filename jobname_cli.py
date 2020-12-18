@@ -134,7 +134,7 @@ def get_salaries_page_data(salaries_site):
     This function takes the page of the site with the salaries of the specific job in the specific city, and returns
     the job salaries in that city (10%, median, 90%) and also the median salary for the job national.
     """
-    browser = webdriver.PhantomJS(os.path.join(os.getcwd(), "phantomjs-2.1.1-macosx/bin/phantomjs"))
+    browser = webdriver.PhantomJS(os.path.join(os.getcwd(), "phantomjs-2.1.1-linux-x86_64/bin/phantomjs"))
     browser.get(salaries_site)
     html = browser.page_source
     soup = BeautifulSoup(html, 'html.parser')
