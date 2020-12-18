@@ -99,6 +99,13 @@ CREATE TABLE regional_salaries (
 ) ENGINE=INNODB;
  """
 
+create_unique_regional ="""
+ALTER TABLE regional_salaries ADD UNIQUE KEY (title_id,location_id)
+"""
+
+create_unique_job_positions ="""
+ALTER TABLE open_positions ADD UNIQUE KEY (title_id,location_id, job_description, company_name)
+"""
 
 connection = create_db_connection("localhost", "root", '1234', 'mining')  # Connect to the Database
 execute_query(connection, create_titles_table)  # Execute defined query
@@ -106,3 +113,5 @@ execute_query(connection, create_location_table)
 execute_query(connection, create_national_salaries_table)
 execute_query(connection, create_regional_job_salaries_table)
 execute_query(connection, create_open_positions_table)
+execute_query(connection, create_unique_regional)
+execute_query(connection, create_unique_job_positions)
