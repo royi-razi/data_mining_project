@@ -11,6 +11,17 @@ import os
 from urllib.request import urlopen
 import json
 import logging
+from configparser import ConfigParser
+
+config = ConfigParser()
+config.read("jobs_config.ini")
+optional_jobs = (config['PARAMETERS']['optional_jobs']).split(',')
+monster_site = config['PARAMETERS']['monster_site']
+app_key = config['PARAMETERS']['app_key']
+app_id = config['PARAMETERS']['app_id']
+salaries_url = config['PARAMETERS']['salaries_site']
+url_api = config['PARAMETERS']['url']
+
 
 formatter = logging.Formatter('%(asctime)s-%(levelname)s-FILE:%(filename)s-FUNC:%(funcName)s-LINE:'
                               '%(lineno)d-%(message)s')
@@ -90,34 +101,30 @@ def check_validity_jobname(job_name):
     :param job_name: the input parameter
     :return: nothing, exits the program if the job name is not within the optional jobs list.
     """
-    optional_jobs = ["data scientist", "data analyst", "data engineer", "statistician", "big data architect",
-                     "senior data scientist"]
     if job_name.lower() not in optional_jobs:
         print("job name not acceptable.")
         sys.exit(1)
     logger.info("job name - {} is valid".format(job_name))
 
 
-def monster_get_content(job, location):
+def monster_get_content(monster_site, job, location):
     """
     This function gets a job title and a location, and returns a page content of the desired url in the monster website.
     The search gets up to 250 searches (the maximum amount of searches the page can display)
     """
-    monster_site = 'https://www.monster.com/jobs/search'  # name of the site
     payload = {'q': job, 'where': location, 'page': '10'}  # parameters to insert the url in the request.
     page = requests.get(monster_site, params=payload)
     logger.info("Got Monster jobs list.")
     return page
 
 
-def monster_get_salaries(city, state, job_name):
+def monster_get_salaries(salaries_url, city, state, job_name):
     """
     This function gets a job title and a location, and returns a page content of the desired url of salary tool in the
     monster website.
     """
     states_dict = dict(zip(states_long, states_abb))
-    salaries_site = 'https://www.monster.com/salary/q-{}-l-{}-{}' \
-        .format("-".join(job_name.lower().split()), "-".join(city.lower().split()), states_dict[state].lower())
+    salaries_site = salaries_url.format("-".join(job_name.lower().split()), "-".join(city.lower().split()), states_dict[state].lower())
     logger.info("Got Monster salaries data.")
     return salaries_site
 
@@ -167,7 +174,7 @@ def get_jobs_page_data(page):
     return jobs_output
 
 
-def use_adzuna_api(job_name, location):
+def use_adzuna_api(url_api, app_id, app_key, job_name, location):
     """
     This function extracts jobs data using the api of adzuna
     :param job_name: the job name requested
@@ -175,13 +182,12 @@ def use_adzuna_api(job_name, location):
     :return: output a list of lists where each list contains the name of the job offer company,
      specific location and title.
     """
-    app_key = 'c54b61864d1a48221053a5bf3093674d'
-    app_id = '356aad97'
+    # app_key = 'c54b61864d1a48221053a5bf3093674d'
+    # app_id = '356aad97'
     job_name_query = "%20".join(job_name.split())
     location_query = "%20".join(location.split())
 
-    url = 'https://api.adzuna.com/v1/api/jobs/us/search/1?app_id={}&app_key={}&' \
-          'what={}&where={}&content-type=application/json'.format(app_id, app_key, job_name_query, location_query)
+    url = url_api.format(app_id, app_key, job_name_query, location_query)
     response = urlopen(url)
     results = json.loads(response.read())
     jobs_output_api = []
@@ -293,12 +299,12 @@ def main():
     check_validity_jobname(job_name)  # checks if the job is within the list of jobs allowed.
     place = city + ", " + state
     lat, lon = get_lat_lon(place)  # get latitude and longitude of the place being searched.
-    salaries_site = monster_get_salaries(city, state, job_name)  # Getting salaries url.
+    salaries_site = monster_get_salaries(salaries_url, city, state, job_name)  # Getting salaries url.
     prc90, med, prc10, national = get_salaries_page_data(
         salaries_site)  # Getting salaries stats in the city and the US.
-    page = monster_get_content(job_name, place)  # Using the function on the monster URL.
+    page = monster_get_content(monster_site, job_name, place)  # Using the function on the monster URL.
     jobs_output = get_jobs_page_data(page)  # creating a list of all the retrieved data
-    jobs_output_api = use_adzuna_api(job_name, city)  # extracting more data from the adzuna api
+    jobs_output_api = use_adzuna_api(url_api, app_id, app_key, job_name, city)  # extracting more data from the adzuna api
     for job in jobs_output_api:
         jobs_output.append(job)  # concatenating the jobs outputs from the scraping and the api.
     # loading data to tables:
