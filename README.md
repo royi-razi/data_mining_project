@@ -12,7 +12,14 @@ The function then stores all data in a mysql database ("mining") which contains 
 4. open_positions
 5. titles
 
-![](.README_images/ERD_mining.png)
+![](.README_images/ERD.png)
+
+## Adzuna Web API:
+Adzuna is an employment website for job advertisements worldwide. We are using Adzuna to enrich our
+job search. For each search we are running on www.monster.com, we run the same search in parallel on
+Adzuna using the same search criteria. 
+Running a search on Adzuna requires an API ID and key, which our code automatically retrieves
+from the jobs_config.ini, allowing easy alteration if necessary.
 
 # Ancillary city_state.py file:  
 In order to run jobhunt_cli.py, the file city_state.py needs to be in the same directory as jobhunt_cli.py. 
