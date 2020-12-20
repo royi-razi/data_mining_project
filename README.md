@@ -60,6 +60,7 @@ The jobhunt_cli function needs the following libraries (requirements.txt):
 - pandas==1.1.1
 - pip==20.2.2
 - pyOpenSSL==19.1.0
+- selenium==3.141.0
 - wheel==0.35.1
 - run database_setup.py to set up the initial mining database.
 - run mining_database_connection.py to setup all database tables.

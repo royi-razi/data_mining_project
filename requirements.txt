@@ -2,9 +2,8 @@
 # [GCC 4.2.1 Compatible Clang 4.0.1 (tags/RELEASE_401/final)] on darwin
 
 # ----------FULL LIST----------
-# Size: 42
+# Size: 41
 Python 3.6.10
-certifi==2020.12.5
 cffi==1.14.2
 chardet==3.0.4
 click==7.1.2
